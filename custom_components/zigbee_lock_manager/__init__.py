@@ -26,6 +26,7 @@ from .const import (
     SERVICE_SET_CODE,
     SERVICE_SYNC_REGISTRY,
 )
+from .frontend import async_remove_frontend_panel, async_setup_frontend
 from .manager import ZigbeeLockManager
 from .storage import LockRegistryStore
 
@@ -104,6 +105,7 @@ async def async_setup_entry(hass: Any, entry: Any) -> bool:
     hass.data[DOMAIN][MANAGER_DATA_KEY] = manager
 
     await _async_register_services(hass)
+    await async_setup_frontend(hass)
     await manager.apply_schedules()
     await manager.scheduler.async_schedule_timers()
 
@@ -164,4 +166,5 @@ async def async_unload_entry(hass: Any, entry: Any) -> bool:
                 manager.scheduler.async_cancel_timers()
         if not any(isinstance(value, dict) for value in domain_data.values()):
             domain_data.pop(MANAGER_DATA_KEY, None)
+            async_remove_frontend_panel(hass)
     return unload_ok

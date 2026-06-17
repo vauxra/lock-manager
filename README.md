@@ -2,7 +2,7 @@
 
 # Zigbee Lock Manager
 
-A HACS-style Home Assistant custom integration for managing Zigbee lock user-code slots through ZHA. The MVP is service-first: it provides Home Assistant services, a private PIN store, safe metadata registry, schedule reconciliation, and a redacted summary sensor. It does **not** include a custom Lovelace card or frontend panel.
+A HACS-style Home Assistant custom integration for managing Zigbee lock user-code slots through ZHA. It provides a Home Assistant sidebar panel, services, a private PIN store, safe metadata registry, schedule reconciliation, and a redacted summary sensor.
 
 ## Scope
 
@@ -35,7 +35,22 @@ The integration does **not** store PINs in config entries/options, helpers, enti
 
 Copy `custom_components/zigbee_lock_manager` into your Home Assistant `config/custom_components/` directory, restart Home Assistant, then add the integration from the UI.
 
+## Sidebar panel
+
+After adding the integration, Home Assistant shows a **Lock Codes** panel in the sidebar for administrators. Use it to:
+
+- choose a configured lock entity or type a lock entity ID;
+- set/update a PIN for a slot;
+- label a slot;
+- set optional start/expiration times;
+- enable, disable, or clear managed slots;
+- refresh the redacted registry view.
+
+The panel accepts PINs only in the write form. It never displays stored PINs; it shows PIN length and private-code presence only.
+
 ## Services
+
+If you prefer YAML/actions, the same operations are available as services. Put `entity_id` under `data`, not under a Home Assistant `target` block.
 
 ### Set a code
 

@@ -1,7 +1,4 @@
 set_code:
-  target:
-    entity:
-      domain: lock
   fields:
     entity_id:
       required: true
@@ -51,9 +48,6 @@ set_code:
         text:
 
 clear_code:
-  target:
-    entity:
-      domain: lock
   fields:
     entity_id:
       required: true
@@ -69,9 +63,6 @@ clear_code:
           mode: box
 
 enable_code:
-  target:
-    entity:
-      domain: lock
   fields:
     entity_id:
       required: true
@@ -87,9 +78,6 @@ enable_code:
           mode: box
 
 disable_code:
-  target:
-    entity:
-      domain: lock
   fields:
     entity_id:
       required: true

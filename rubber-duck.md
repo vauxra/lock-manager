@@ -12,7 +12,7 @@ custom_components/zigbee_lock_manager/
 
 The integration is intended to manage Zigbee door-lock user-code slots, with the MVP focused on **Kwikset Zigbee locks paired through ZHA**.
 
-This is not a frontend-first project. The current goal is a service-first Home Assistant integration with safe backend behavior, private PIN storage, redacted metadata, scheduling, tests, and clear docs.
+This is not a frontend-polish-first project. The current goal is a Home Assistant integration with a practical sidebar panel, safe backend behavior, private PIN storage, redacted metadata, scheduling, tests, and clear docs.
 
 ## Stated goals
 
@@ -28,16 +28,17 @@ The repository aims to provide:
    - `zigbee_lock_manager.sync_registry`
    - `zigbee_lock_manager.apply_schedules`
    - `zigbee_lock_manager.probe_slots`
-3. ZHA-backed lock operations using public ZHA services:
+3. A Home Assistant sidebar panel named **Lock Codes** that lets administrators see managed slots and set, clear, enable, or disable codes without YAML.
+4. ZHA-backed lock operations using public ZHA services:
    - `zha.set_lock_user_code`
    - `zha.clear_lock_user_code`
    - `zha.enable_lock_user_code`
    - `zha.disable_lock_user_code`
-4. Safe local registry behavior:
+5. Safe local registry behavior:
    - plaintext PINs only in a dedicated Home Assistant private `Store(..., private=True, atomic_writes=True)` storage file;
    - no plaintext PINs in config entries, options, helpers, entity states/attributes, diagnostics, logs, events, traces, repairs, or public metadata;
    - no brute-forceable PIN fingerprints in public metadata.
-5. A safe metadata registry that can expose only redacted or non-secret information:
+6. A safe metadata registry that can expose only redacted or non-secret information:
    - entity ID;
    - slot;
    - redacted name/labels/notes/schedule metadata;
@@ -46,16 +47,16 @@ The repository aims to provide:
    - PIN length;
    - private-code presence;
    - last operation status/error/timestamp.
-6. Scheduling semantics:
+7. Scheduling semantics:
    - future `starts_at` codes should not become usable early;
    - expired `expires_at` codes should be disabled, not cleared/deleted;
    - expiration must preserve private PINs for audit/reapply/manual decisions;
    - restart/reload reconciliation should apply current schedule intent.
-7. A conservative `probe_slots` behavior:
+8. A conservative `probe_slots` behavior:
    - public ZHA does not provide reliable readback of lock user codes;
    - probing should not assume slots are empty;
    - probing should not expose, request, or infer PINs.
-8. Lightweight local tests that do not require a full Home Assistant install or physical lock.
+9. Lightweight local tests that do not require a full Home Assistant install or physical lock.
 
 ## Important safety boundaries
 
@@ -65,7 +66,7 @@ Do **not** introduce code that clears, disables, overwrites, or mutates real loc
 
 Do **not** move PINs into Home Assistant config entries/options, entity attributes, diagnostics, logs, events, traces, repairs, or public metadata.
 
-Do **not** add frontend polish at the expense of backend correctness. This MVP is service-first.
+Do **not** add frontend polish at the expense of backend correctness. The sidebar panel must preserve the same PIN-safety boundaries as the services.
 
 ## Review task
 

@@ -2,6 +2,7 @@
   "domain": "zigbee_lock_manager",
   "name": "Zigbee Lock Manager",
   "after_dependencies": ["zha"],
+  "dependencies": ["frontend", "panel_custom", "websocket_api"],
   "codeowners": [],
   "config_flow": true,
   "documentation": "https://github.com/micheal/lock-manager",

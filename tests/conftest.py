@@ -46,6 +46,7 @@ class FakeServices:
 class FakeConfigEntries:
     def __init__(self) -> None:
         self.reloaded_entry_ids: list[str] = []
+        self.entries: list[Any] = []
 
     async def async_forward_entry_setups(
         self, _entry: Any, _platforms: list[str]
@@ -57,6 +58,9 @@ class FakeConfigEntries:
 
     async def async_reload(self, entry_id: str) -> None:
         self.reloaded_entry_ids.append(entry_id)
+
+    def async_entries(self, _domain: str | None = None) -> list[Any]:
+        return list(self.entries)
 
 
 class FakeHass:
