@@ -1,0 +1,151 @@
+set_code:
+  target:
+    entity:
+      domain: lock
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          domain: lock
+    slot:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 250
+          mode: box
+    name:
+      required: true
+      selector:
+        text:
+    code:
+      required: true
+      selector:
+        text:
+          type: password
+    labels:
+      required: false
+      selector:
+        object:
+    enabled:
+      required: false
+      default: true
+      selector:
+        boolean:
+    starts_at:
+      required: false
+      selector:
+        datetime:
+    expires_at:
+      required: false
+      selector:
+        datetime:
+    schedule:
+      required: false
+      selector:
+        object:
+    notes:
+      required: false
+      selector:
+        text:
+
+clear_code:
+  target:
+    entity:
+      domain: lock
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          domain: lock
+    slot:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 250
+          mode: box
+
+enable_code:
+  target:
+    entity:
+      domain: lock
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          domain: lock
+    slot:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 250
+          mode: box
+
+disable_code:
+  target:
+    entity:
+      domain: lock
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          domain: lock
+    slot:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 250
+          mode: box
+
+sync_registry:
+  fields:
+    entity_id:
+      required: false
+      selector:
+        entity:
+          domain: lock
+
+apply_registry:
+  fields:
+    entity_id:
+      required: false
+      selector:
+        entity:
+          domain: lock
+
+apply_schedules:
+  fields:
+    entity_id:
+      required: false
+      selector:
+        entity:
+          domain: lock
+
+probe_slots:
+  fields:
+    entity_id:
+      required: false
+      selector:
+        entity:
+          domain: lock
+    start_slot:
+      required: false
+      selector:
+        number:
+          min: 1
+          max: 250
+          mode: box
+    end_slot:
+      required: false
+      selector:
+        number:
+          min: 1
+          max: 250
+          mode: box

@@ -1,0 +1,42 @@
+{
+  "title": "Zigbee Lock Manager",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Zigbee Lock Manager",
+        "description": "Optionally choose lock entities to manage now. You can also target locks directly in services later.",
+        "data": {
+          "lock_entities": "Managed lock entities",
+          "min_slot": "Minimum managed slot",
+          "max_slot": "Maximum managed slot",
+          "min_code_length": "Minimum PIN length",
+          "max_code_length": "Maximum PIN length"
+        }
+      }
+    },
+    "error": {
+      "invalid_input": "Check slot range and PIN length settings."
+    },
+    "abort": {
+      "already_configured": "Zigbee Lock Manager is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Zigbee Lock Manager options",
+        "description": "Adjust default manual slot and PIN validation limits.",
+        "data": {
+          "lock_entities": "Managed lock entities",
+          "min_slot": "Minimum managed slot",
+          "max_slot": "Maximum managed slot",
+          "min_code_length": "Minimum PIN length",
+          "max_code_length": "Maximum PIN length"
+        }
+      }
+    },
+    "error": {
+      "invalid_input": "Check slot range and PIN length settings."
+    }
+  }
+}

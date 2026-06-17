@@ -1,0 +1,7 @@
+{
+  "name": "Zigbee Lock Manager",
+  "content_in_root": false,
+  "render_readme": true,
+  "domains": ["lock"],
+  "homeassistant": "2026.2.2"
+}
