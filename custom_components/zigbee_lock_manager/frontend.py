@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from .const import DOMAIN, MANAGER_DATA_KEY
+from .const import DOMAIN, MANAGER_DATA_KEY, validate_entity_id, validate_slot
 
 PANEL_URL_PATH = "zigbee-lock-manager"
 PANEL_WEB_COMPONENT = "zigbee-lock-manager-panel"
@@ -40,6 +40,15 @@ def build_ui_summary(
             "max_code_length": manager.max_code_length,
         },
     }
+
+
+async def build_private_code_response(
+    manager: Any, entity_id: str, slot: int
+) -> dict[str, str | None]:
+    """Return a private PIN for an explicit admin reveal action."""
+    entity_id = validate_entity_id(entity_id)
+    slot = validate_slot(slot, minimum=manager.min_slot, maximum=manager.max_slot)
+    return {"code": await manager.registry.async_get_private_code(entity_id, slot)}
 
 
 def _configured_lock_entities(hass: Any) -> list[str]:
@@ -125,7 +134,27 @@ def _async_register_websocket_api(hass: Any, data: dict[str, Any]) -> None:
             build_ui_summary(manager, _configured_lock_entities(hass)),
         )
 
+    @websocket_api.websocket_command(
+        {
+            vol.Required("type"): f"{DOMAIN}/private_code",
+            vol.Required("entity_id"): str,
+            vol.Required("slot"): vol.Coerce(int),
+        }
+    )
+    @websocket_api.require_admin
+    @websocket_api.async_response
+    async def websocket_private_code(
+        hass: Any, connection: Any, msg: dict[str, Any]
+    ) -> None:
+        """Return a private PIN only after an explicit admin reveal request."""
+        manager = _current_manager(hass)
+        connection.send_result(
+            msg["id"],
+            await build_private_code_response(manager, msg["entity_id"], msg["slot"]),
+        )
+
     websocket_api.async_register_command(hass, websocket_summary)
+    websocket_api.async_register_command(hass, websocket_private_code)
     data[WEBSOCKET_REGISTERED] = True
 
 

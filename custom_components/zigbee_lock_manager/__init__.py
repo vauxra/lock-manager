@@ -19,6 +19,7 @@ from .const import (
     PUBLIC_SERVICE_NAMES,
     SERVICE_APPLY_REGISTRY,
     SERVICE_APPLY_SCHEDULES,
+    SERVICE_CLEAR_ALL_CODES,
     SERVICE_CLEAR_CODE,
     SERVICE_DISABLE_CODE,
     SERVICE_ENABLE_CODE,
@@ -58,6 +59,15 @@ def _service_schema(service_name: str) -> Any:
         )
     if service_name in {SERVICE_CLEAR_CODE, SERVICE_ENABLE_CODE, SERVICE_DISABLE_CODE}:
         return vol.Schema({**entity, **slot})
+    if service_name == SERVICE_CLEAR_ALL_CODES:
+        return vol.Schema(
+            {
+                **entity,
+                vol.Optional("start_slot"): vol.Coerce(int),
+                vol.Optional("end_slot"): vol.Coerce(int),
+                vol.Optional("known_only", default=False): bool,
+            }
+        )
     if service_name in {
         SERVICE_SYNC_REGISTRY,
         SERVICE_APPLY_REGISTRY,

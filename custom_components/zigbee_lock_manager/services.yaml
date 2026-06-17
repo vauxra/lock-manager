@@ -62,6 +62,33 @@ clear_code:
           max: 250
           mode: box
 
+clear_all_codes:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          domain: lock
+    start_slot:
+      required: false
+      selector:
+        number:
+          min: 1
+          max: 250
+          mode: box
+    end_slot:
+      required: false
+      selector:
+        number:
+          min: 1
+          max: 250
+          mode: box
+    known_only:
+      required: false
+      default: false
+      selector:
+        boolean:
+
 enable_code:
   fields:
     entity_id:

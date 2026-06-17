@@ -11,6 +11,7 @@ from .const import (
     DEFAULT_MIN_SLOT,
     SERVICE_APPLY_REGISTRY,
     SERVICE_APPLY_SCHEDULES,
+    SERVICE_CLEAR_ALL_CODES,
     SERVICE_CLEAR_CODE,
     SERVICE_DISABLE_CODE,
     SERVICE_ENABLE_CODE,
@@ -169,6 +170,54 @@ class ZigbeeLockManager:
             )
             raise
         await self.registry.async_remove_code_slot(entity_id=entity_id, slot=slot)
+
+    async def clear_all_codes(
+        self,
+        entity_id: str,
+        *,
+        start_slot: int | None = None,
+        end_slot: int | None = None,
+        known_only: bool = False,
+    ) -> list[dict[str, Any]]:
+        """Clear either known managed slots or every slot in the configured range."""
+        entity_id = validate_entity_id(entity_id)
+        if known_only:
+            slots = [
+                slot
+                for lock_entity_id, slot, _metadata in self.registry.iter_slots(
+                    entity_id
+                )
+                if lock_entity_id == entity_id
+            ]
+        else:
+            start = self._validate_slot(start_slot or self.min_slot)
+            end = self._validate_slot(end_slot or self.max_slot)
+            if end < start:
+                raise ValidationError(
+                    "end_slot must be greater than or equal to start_slot"
+                )
+            slots = list(range(start, end + 1))
+
+        results: list[dict[str, Any]] = []
+        for slot in sorted(set(slots)):
+            try:
+                await self.clear_code(entity_id, slot)
+            except Exception as err:
+                await self.registry.async_record_operation(
+                    entity_id=entity_id,
+                    slot=slot,
+                    operation=SERVICE_CLEAR_ALL_CODES,
+                    status="failed",
+                    error=err,
+                )
+                results.append(
+                    {"entity_id": entity_id, "slot": slot, "status": "failed"}
+                )
+            else:
+                results.append(
+                    {"entity_id": entity_id, "slot": slot, "status": "success"}
+                )
+        return results
 
     async def enable_code(
         self,
@@ -396,6 +445,13 @@ class ZigbeeLockManager:
             )
         if service == SERVICE_CLEAR_CODE:
             return await self.clear_code(data["entity_id"], data["slot"])
+        if service == SERVICE_CLEAR_ALL_CODES:
+            return await self.clear_all_codes(
+                data["entity_id"],
+                start_slot=data.get("start_slot"),
+                end_slot=data.get("end_slot"),
+                known_only=data.get("known_only", False),
+            )
         if service == SERVICE_ENABLE_CODE:
             return await self.enable_code(data["entity_id"], data["slot"])
         if service == SERVICE_DISABLE_CODE:

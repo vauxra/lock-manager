@@ -215,3 +215,50 @@ def test_apply_registry_does_not_program_expired_or_disabled_codes() -> None:
         assert "765432" not in str(manager.registry.public_registry)
 
     run(scenario())
+
+
+def test_clear_all_codes_clears_configured_slot_range_and_registry() -> None:
+    async def scenario() -> None:
+        hass, manager = await make_manager()
+        await manager.registry.async_set_code_metadata(
+            entity_id="lock.front_door", slot=2, name="Guest", code="2222"
+        )
+        hass.services.calls.clear()
+
+        result = await manager.clear_all_codes(
+            "lock.front_door", start_slot=1, end_slot=3
+        )
+
+        assert result == [
+            {"entity_id": "lock.front_door", "slot": 1, "status": "success"},
+            {"entity_id": "lock.front_door", "slot": 2, "status": "success"},
+            {"entity_id": "lock.front_door", "slot": 3, "status": "success"},
+        ]
+        assert [call[2] for call in hass.services.calls] == [
+            {"entity_id": "lock.front_door", "code_slot": 1},
+            {"entity_id": "lock.front_door", "code_slot": 2},
+            {"entity_id": "lock.front_door", "code_slot": 3},
+        ]
+        assert manager.registry.safe_summary()["occupied_slot_count"] == 0
+
+    run(scenario())
+
+
+def test_clear_all_codes_known_only_limits_to_managed_slots() -> None:
+    async def scenario() -> None:
+        hass, manager = await make_manager()
+        await manager.registry.async_set_code_metadata(
+            entity_id="lock.front_door", slot=4, name="Guest", code="4444"
+        )
+        hass.services.calls.clear()
+
+        result = await manager.clear_all_codes("lock.front_door", known_only=True)
+
+        assert result == [
+            {"entity_id": "lock.front_door", "slot": 4, "status": "success"},
+        ]
+        assert [call[2] for call in hass.services.calls] == [
+            {"entity_id": "lock.front_door", "code_slot": 4},
+        ]
+
+    run(scenario())

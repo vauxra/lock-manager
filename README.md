@@ -44,9 +44,13 @@ After adding the integration, Home Assistant shows a **Lock Codes** panel in the
 - label a slot;
 - set optional start/expiration times;
 - enable, disable, or clear managed slots;
+- clear every slot in the configured slot range after explicit confirmation;
+- reveal a stored PIN only by clicking the per-slot eye button;
 - refresh the redacted registry view.
 
-The panel accepts PINs only in the write form. It never displays stored PINs; it shows PIN length and private-code presence only.
+The panel accepts PINs in the write form and stores them in the private store. Normal summary data stays PIN-free; the current PIN field is masked and only fetches a private PIN after an explicit administrator reveal click.
+
+The panel shows the configured slot range, for example `1–30 (30 total)`. Public ZHA does not reliably expose the physical lock's maximum supported user-code slot count, so the configured range is the operational coverage the integration can guarantee.
 
 ## Services
 
@@ -81,6 +85,19 @@ data:
 ```
 
 A successful clear removes both the safe registry metadata and private PIN copy for that slot.
+
+### Clear all configured slots
+
+```yaml
+service: zigbee_lock_manager.clear_all_codes
+data:
+  entity_id: lock.front_door
+  start_slot: 1
+  end_slot: 30
+  known_only: false
+```
+
+Clears every slot in the supplied/configured range by calling `zha.clear_lock_user_code` per slot. Use this carefully: it can remove working codes from the physical lock. Set `known_only: true` to clear only slots already present in the local manager registry.
 
 ### Enable or disable a code
 
@@ -139,9 +156,8 @@ Public metadata includes values such as lock `entity_id`, slot, redacted name/la
 ## Known limitations
 
 - ZHA only for MVP; Zigbee2MQTT and Z-Wave JS are future adapter candidates.
-- No custom frontend panel/card.
 - No guaranteed import/readback of existing lock codes.
-- No automatic slot discovery; default managed range is conservative (`1–30`) and configurable in code/options.
+- No automatic physical max-slot discovery through public ZHA; default managed range is conservative (`1–30`) and configurable in options.
 - Expiration disables slots but does not clear/delete PINs.
 - Private HA storage is not encrypted-at-rest protection against HA host/backups/admin compromise.
 

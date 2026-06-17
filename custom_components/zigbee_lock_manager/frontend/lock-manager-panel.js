@@ -6,6 +6,7 @@ class ZigbeeLockManagerPanel extends HTMLElement {
     this._error = "";
     this._busy = false;
     this._loaded = false;
+    this._revealedPins = new Map();
   }
 
   set hass(hass) {
@@ -52,10 +53,19 @@ class ZigbeeLockManagerPanel extends HTMLElement {
     };
   }
 
+  _slotCount() {
+    const bounds = this._bounds();
+    return Math.max(0, bounds.max_slot - bounds.min_slot + 1);
+  }
+
   _locks() {
     const locks = new Set(this._summary?.lock_entities || []);
     Object.keys(this._summary?.locks || {}).forEach((entityId) => locks.add(entityId));
     return [...locks].sort();
+  }
+
+  _pinKey(entityId, slot) {
+    return `${entityId}::${slot}`;
   }
 
   async _call(service, data, successMessage = "Done") {
@@ -134,11 +144,74 @@ class ZigbeeLockManagerPanel extends HTMLElement {
     await this._call(service, { entity_id: entityId, slot }, `${service.replace("_", " ")} slot ${slot}`);
   }
 
+  async _clearAll(entityId) {
+    const bounds = this._bounds();
+    const count = this._slotCount();
+    const first = confirm(
+      `Clear ALL configured slots ${bounds.min_slot}-${bounds.max_slot} (${count} slots) on ${entityId}?\n\nThis can remove working lock codes from the physical lock.`,
+    );
+    if (!first) return;
+    const typed = prompt(`Type CLEAR to confirm clearing slots ${bounds.min_slot}-${bounds.max_slot} on ${entityId}.`);
+    if (typed !== "CLEAR") return;
+    await this._call(
+      "clear_all_codes",
+      {
+        entity_id: entityId,
+        start_slot: bounds.min_slot,
+        end_slot: bounds.max_slot,
+        known_only: false,
+      },
+      `Clear-all sent for ${entityId}`,
+    );
+  }
+
+  async _revealPin(entityId, slot) {
+    const key = this._pinKey(entityId, slot);
+    if (this._revealedPins.has(key)) {
+      this._revealedPins.delete(key);
+      this._render();
+      return;
+    }
+    this._busy = true;
+    this._error = "";
+    this._render();
+    try {
+      const result = await this._hass.callWS({
+        type: "zigbee_lock_manager/private_code",
+        entity_id: entityId,
+        slot,
+      });
+      if (!result?.code) {
+        this._error = `No private PIN stored for slot ${slot}.`;
+      } else {
+        this._revealedPins.set(key, result.code);
+      }
+    } catch (err) {
+      this._error = this._errorText(err);
+    } finally {
+      this._busy = false;
+      this._render();
+    }
+  }
+
   _setEntity(entityId, slot = "") {
     const entity = this.shadowRoot.getElementById("entity_id");
     const slotInput = this.shadowRoot.getElementById("slot");
     if (entity) entity.value = entityId;
     if (slotInput && slot !== "") slotInput.value = slot;
+  }
+
+  _renderPinControl(entityId, slot, meta) {
+    const key = this._pinKey(entityId, slot);
+    const revealed = this._revealedPins.get(key);
+    const placeholder = meta.has_private_code ? "••••••" : "No stored PIN";
+    const value = revealed || "";
+    const buttonLabel = revealed ? "🙈" : "👁";
+    return `
+      <div class="pin-line">
+        <input class="pin-field" type="${revealed ? "text" : "password"}" readonly value="${this._esc(value)}" placeholder="${placeholder}">
+        <button class="icon" title="${revealed ? "Hide PIN" : "Reveal PIN"}" data-pin="${entityId}" data-slot="${slot}" ${meta.has_private_code ? "" : "disabled"}>${buttonLabel}</button>
+      </div>`;
   }
 
   _renderSlots(entityId, lock) {
@@ -147,7 +220,7 @@ class ZigbeeLockManagerPanel extends HTMLElement {
     return `
       <div class="table">
         <div class="row header">
-          <span>Slot</span><span>Name</span><span>Status</span><span>Schedule</span><span>Last op</span><span>Actions</span>
+          <span>Slot</span><span>Name</span><span>Status / PIN</span><span>Schedule</span><span>Last op</span><span>Actions</span>
         </div>
         ${slots.map(([slotText, meta]) => {
           const slot = Number(slotText);
@@ -165,7 +238,7 @@ class ZigbeeLockManagerPanel extends HTMLElement {
             <div class="row">
               <span><button class="link" data-fill="${entityId}" data-slot="${slot}">${slot}</button></span>
               <span><strong>${this._esc(meta.name || `Slot ${slot}`)}</strong>${labels ? `<small>${this._esc(labels)}</small>` : ""}</span>
-              <span><span class="pill ${meta.enabled ? "ok" : "off"}">${enabled}</span><small>${privateCode}</small></span>
+              <span><span class="pill ${meta.enabled ? "ok" : "off"}">${enabled}</span><small>${privateCode}</small>${this._renderPinControl(entityId, slot, meta)}</span>
               <span>${this._esc(schedule)}</span>
               <span>${this._esc(last)}</span>
               <span class="actions">
@@ -198,43 +271,50 @@ class ZigbeeLockManagerPanel extends HTMLElement {
 
   _render() {
     const bounds = this._bounds();
+    const slotCount = this._slotCount();
     const locks = this._locks();
     const managedLocks = this._summary?.locks || {};
     this.shadowRoot.innerHTML = `
       <style>
         :host { display: block; padding: 24px; color: var(--primary-text-color); }
-        .wrap { max-width: 1180px; margin: 0 auto; }
+        .wrap { max-width: 1240px; margin: 0 auto; }
         h1 { margin: 0 0 4px; font-size: 28px; }
         h2 { margin-top: 0; }
-        .muted, small { color: var(--secondary-text-color); }
+        .muted, small { color: var(--secondary-text-color); display: block; }
         .grid { display: grid; grid-template-columns: minmax(320px, 420px) 1fr; gap: 18px; align-items: start; }
         .card { background: var(--card-background-color); border-radius: 14px; padding: 18px; box-shadow: var(--ha-card-box-shadow, 0 2px 10px rgba(0,0,0,.12)); border: 1px solid var(--divider-color); }
         label { display: block; font-size: 13px; color: var(--secondary-text-color); margin: 10px 0 4px; }
         input, select { box-sizing: border-box; width: 100%; padding: 10px; border: 1px solid var(--divider-color); border-radius: 8px; background: var(--card-background-color); color: var(--primary-text-color); }
         input[type="checkbox"] { width: auto; }
         button { cursor: pointer; border: 0; border-radius: 8px; padding: 9px 12px; background: var(--primary-color); color: var(--text-primary-color, white); margin: 2px; }
+        button:disabled { cursor: not-allowed; opacity: .45; }
         button.secondary { background: var(--secondary-background-color); color: var(--primary-text-color); border: 1px solid var(--divider-color); }
         button.danger { background: var(--error-color, #db4437); color: white; }
         button.link { background: none; color: var(--primary-color); padding: 0; text-decoration: underline; }
+        button.icon { min-width: 40px; padding: 8px; }
         .topbar { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 18px; }
         .error { background: rgba(219,68,55,.12); border: 1px solid var(--error-color, #db4437); padding: 10px; border-radius: 8px; margin: 12px 0; }
         .hint { background: rgba(3,169,244,.10); border: 1px solid rgba(3,169,244,.35); padding: 10px; border-radius: 8px; margin: 12px 0; }
         .table { display: grid; gap: 0; overflow-x: auto; }
-        .row { display: grid; grid-template-columns: 60px minmax(150px, 1.3fr) minmax(130px, 1fr) minmax(160px, 1fr) minmax(120px, 1fr) minmax(220px, auto); gap: 8px; align-items: center; padding: 10px 0; border-top: 1px solid var(--divider-color); min-width: 900px; }
+        .row { display: grid; grid-template-columns: 60px minmax(150px, 1.2fr) minmax(190px, 1.1fr) minmax(160px, 1fr) minmax(120px, .9fr) minmax(220px, auto); gap: 8px; align-items: center; padding: 10px 0; border-top: 1px solid var(--divider-color); min-width: 1030px; }
         .row.header { color: var(--secondary-text-color); font-size: 12px; text-transform: uppercase; border-top: 0; }
         .pill { display: inline-block; border-radius: 999px; padding: 3px 8px; font-size: 12px; margin-bottom: 3px; }
         .pill.ok { background: rgba(15,157,88,.14); color: var(--success-color, #0f9d58); }
         .pill.off { background: rgba(128,128,128,.16); color: var(--secondary-text-color); }
         .actions { white-space: nowrap; }
         .lock-card { margin-bottom: 16px; }
+        .lock-head { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        @media (max-width: 900px) { :host { padding: 12px; } .grid { grid-template-columns: 1fr; } .topbar { align-items: flex-start; flex-direction: column; } }
+        .pin-line { display: flex; gap: 6px; margin-top: 5px; }
+        .pin-field { min-width: 0; padding: 8px; font-family: monospace; }
+        @media (max-width: 900px) { :host { padding: 12px; } .grid { grid-template-columns: 1fr; } .topbar, .lock-head { align-items: flex-start; flex-direction: column; } }
       </style>
       <div class="wrap">
         <div class="topbar">
           <div>
             <h1>Lock Codes</h1>
-            <div class="muted">Manage Zigbee lock code slots. PINs are accepted for writes, never displayed.</div>
+            <div class="muted">Manage Zigbee lock code slots. PINs are masked and only revealed on explicit admin click.</div>
+            <div class="muted">Configured slots: ${bounds.min_slot}-${bounds.max_slot} (${slotCount} total). Public ZHA does not reliably report the lock's physical max slot count.</div>
           </div>
           <button class="secondary" id="refresh">${this._busy ? "Working…" : "Refresh"}</button>
         </div>
@@ -253,10 +333,10 @@ class ZigbeeLockManagerPanel extends HTMLElement {
             <input id="code" type="password" inputmode="numeric" pattern="\\d*" autocomplete="new-password" required>
             <label for="labels">Labels, comma-separated</label>
             <input id="labels" placeholder="guest, test">
-            <div class="form-row">
-              <div><label for="starts_at">Starts at</label><input id="starts_at" type="datetime-local"></div>
-              <div><label for="expires_at">Expires at</label><input id="expires_at" type="datetime-local"></div>
-            </div>
+            <label for="starts_at">Starts at</label>
+            <input id="starts_at" type="datetime-local">
+            <label for="expires_at">Expires at</label>
+            <input id="expires_at" type="datetime-local">
             <label><input id="enabled" type="checkbox" checked> Enabled now</label>
             <div class="hint">Use a known safe/unoccupied slot first. This UI sends <code>entity_id</code> under service <code>data</code>.</div>
             <button type="submit">Save code</button>
@@ -264,7 +344,13 @@ class ZigbeeLockManagerPanel extends HTMLElement {
           <div>
             ${(locks.length ? locks : [""]).map((entityId) => entityId ? `
               <section class="card lock-card">
-                <h2>${this._esc(entityId)}</h2>
+                <div class="lock-head">
+                  <div>
+                    <h2>${this._esc(entityId)}</h2>
+                    <div class="muted">Slot coverage: ${bounds.min_slot}-${bounds.max_slot} (${slotCount} configured)</div>
+                  </div>
+                  <button class="danger" data-clear-all="${entityId}">Clear all ${bounds.min_slot}-${bounds.max_slot}</button>
+                </div>
                 ${this._renderSlots(entityId, managedLocks[entityId])}
               </section>` : `
               <section class="card">
@@ -288,6 +374,12 @@ class ZigbeeLockManagerPanel extends HTMLElement {
     });
     this.shadowRoot.querySelectorAll("[data-fill]").forEach((button) => {
       button.addEventListener("click", () => this._setEntity(button.getAttribute("data-fill"), button.getAttribute("data-slot")));
+    });
+    this.shadowRoot.querySelectorAll("[data-pin]").forEach((button) => {
+      button.addEventListener("click", () => this._revealPin(button.getAttribute("data-pin"), Number(button.getAttribute("data-slot"))));
+    });
+    this.shadowRoot.querySelectorAll("[data-clear-all]").forEach((button) => {
+      button.addEventListener("click", () => this._clearAll(button.getAttribute("data-clear-all")));
     });
   }
 }

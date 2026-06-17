@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from custom_components.zigbee_lock_manager.frontend import (
     _configured_lock_entities,
+    build_private_code_response,
     build_ui_summary,
 )
 
@@ -51,5 +52,24 @@ def test_configured_lock_entities_reads_entry_data_and_options() -> None:
             "lock.back_door",
             "lock.front_door",
         ]
+
+    run(scenario())
+
+
+def test_private_code_response_requires_explicit_lookup() -> None:
+    async def scenario() -> None:
+        _hass, manager = await make_manager()
+        await manager.registry.async_set_code_metadata(
+            entity_id="lock.front_door",
+            slot=2,
+            name="Guest",
+            code="246810",
+        )
+
+        summary = build_ui_summary(manager)
+        assert "246810" not in str(summary)
+
+        response = await build_private_code_response(manager, "lock.front_door", 2)
+        assert response == {"code": "246810"}
 
     run(scenario())
