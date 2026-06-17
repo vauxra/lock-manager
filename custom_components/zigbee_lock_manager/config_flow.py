@@ -166,13 +166,13 @@ class ZigbeeLockManagerOptionsFlow(config_entries.OptionsFlow):
     """Handle options updates."""
 
     def __init__(self, config_entry: Any) -> None:
-        self.config_entry = config_entry
+        self._config_entry = config_entry
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> dict[str, Any]:
-        defaults = {**getattr(self.config_entry, "data", {})}
-        defaults.update(getattr(self.config_entry, "options", {}) or {})
+        defaults = {**getattr(self._config_entry, "data", {})}
+        defaults.update(getattr(self._config_entry, "options", {}) or {})
         errors: dict[str, str] = {}
         if user_input is not None:
             try:

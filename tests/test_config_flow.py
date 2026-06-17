@@ -10,6 +10,7 @@ from custom_components.zigbee_lock_manager.config_flow import (
     CONF_MIN_CODE_LENGTH,
     CONF_MIN_SLOT,
     ZigbeeLockManagerConfigFlow,
+    ZigbeeLockManagerOptionsFlow,
     _validate_user_input,
 )
 
@@ -88,3 +89,16 @@ def test_entry_runtime_options_merge_config_and_options() -> None:
         "min_code_length": 4,
         "max_code_length": 6,
     }
+
+
+def test_options_flow_uses_private_config_entry_reference() -> None:
+    async def scenario() -> None:
+        entry = SimpleNamespace(
+            data={CONF_LOCK_ENTITIES: ["lock.front_door"]},
+            options={CONF_MAX_SLOT: 12},
+        )
+        flow = ZigbeeLockManagerOptionsFlow(entry)
+        result = await flow.async_step_init()
+        assert result["type"] == "form"
+
+    run(scenario())
