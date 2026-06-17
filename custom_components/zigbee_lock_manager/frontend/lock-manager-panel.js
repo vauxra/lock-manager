@@ -7,6 +7,7 @@ class ZigbeeLockManagerPanel extends HTMLElement {
     this._busy = false;
     this._loaded = false;
     this._revealedPins = new Map();
+    this._draft = {};
   }
 
   set hass(hass) {
@@ -14,8 +15,6 @@ class ZigbeeLockManagerPanel extends HTMLElement {
     if (!this._loaded) {
       this._loaded = true;
       this._load();
-    } else {
-      this._render();
     }
   }
 
@@ -64,6 +63,21 @@ class ZigbeeLockManagerPanel extends HTMLElement {
     return [...locks].sort();
   }
 
+  _allLockEntities() {
+    const locks = new Set(this._locks());
+    Object.keys(this._hass?.states || {})
+      .filter((entityId) => entityId.startsWith("lock."))
+      .forEach((entityId) => locks.add(entityId));
+    if (this._draft.entity_id) locks.add(this._draft.entity_id);
+    return [...locks].sort();
+  }
+
+  _entityLabel(entityId) {
+    const state = this._hass?.states?.[entityId];
+    const name = state?.attributes?.friendly_name;
+    return name ? `${name} (${entityId})` : entityId;
+  }
+
   _pinKey(entityId, slot) {
     return `${entityId}::${slot}`;
   }
@@ -91,6 +105,32 @@ class ZigbeeLockManagerPanel extends HTMLElement {
         detail: { message },
       }),
     );
+  }
+
+  _captureDraft() {
+    const root = this.shadowRoot;
+    const draft = { ...this._draft };
+    for (const id of ["entity_id", "slot", "name", "code", "labels", "starts_at", "expires_at"]) {
+      const element = root.getElementById(id);
+      if (element) draft[id] = element.value;
+    }
+    const enabled = root.getElementById("enabled");
+    if (enabled) draft.enabled = enabled.checked;
+    draft.activeElementId = root.activeElement?.id || "";
+    this._draft = draft;
+    return draft;
+  }
+
+  _restoreDraft(draft = this._draft) {
+    const root = this.shadowRoot;
+    for (const id of ["entity_id", "slot", "name", "code", "labels", "starts_at", "expires_at"]) {
+      const element = root.getElementById(id);
+      if (element && draft[id] !== undefined) element.value = draft[id];
+    }
+    const enabled = root.getElementById("enabled");
+    if (enabled && draft.enabled !== undefined) enabled.checked = draft.enabled;
+    const active = draft.activeElementId ? root.getElementById(draft.activeElementId) : null;
+    if (active && document.activeElement !== active) active.focus();
   }
 
   _formData() {
@@ -138,6 +178,7 @@ class ZigbeeLockManagerPanel extends HTMLElement {
     await this._call("set_code", data, `Stored slot ${data.slot}`);
     const code = this.shadowRoot.getElementById("code");
     if (code) code.value = "";
+    this._draft.code = "";
   }
 
   async _slotAction(service, entityId, slot) {
@@ -270,9 +311,11 @@ class ZigbeeLockManagerPanel extends HTMLElement {
   }
 
   _render() {
+    const draft = this._captureDraft();
     const bounds = this._bounds();
     const slotCount = this._slotCount();
     const locks = this._locks();
+    const lockOptions = this._allLockEntities();
     const managedLocks = this._summary?.locks || {};
     this.shadowRoot.innerHTML = `
       <style>
@@ -323,8 +366,10 @@ class ZigbeeLockManagerPanel extends HTMLElement {
           <form class="card" id="set-form">
             <h2>Set / update code</h2>
             <label for="entity_id">Lock entity</label>
-            <input id="entity_id" list="known-locks" placeholder="lock.front_door" autocomplete="off" required>
-            <datalist id="known-locks">${locks.map((lock) => `<option value="${this._esc(lock)}"></option>`).join("")}</datalist>
+            <select id="entity_id" required>
+              <option value="">Choose a lock…</option>
+              ${lockOptions.map((lock) => `<option value="${this._esc(lock)}">${this._esc(this._entityLabel(lock))}</option>`).join("")}
+            </select>
             <div class="form-row">
               <div><label for="slot">Slot</label><input id="slot" type="number" min="${bounds.min_slot}" max="${bounds.max_slot}" value="${bounds.min_slot}" required></div>
               <div><label for="name">Name</label><input id="name" placeholder="Guest / Housekeeper" required></div>
@@ -381,6 +426,7 @@ class ZigbeeLockManagerPanel extends HTMLElement {
     this.shadowRoot.querySelectorAll("[data-clear-all]").forEach((button) => {
       button.addEventListener("click", () => this._clearAll(button.getAttribute("data-clear-all")));
     });
+    this._restoreDraft(draft);
   }
 }
 
