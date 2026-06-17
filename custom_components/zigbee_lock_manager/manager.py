@@ -10,10 +10,13 @@ from .const import (
     DEFAULT_MIN_CODE_LENGTH,
     DEFAULT_MIN_SLOT,
     SERVICE_APPLY_REGISTRY,
+    SERVICE_APPLY_SCHEDULES,
     SERVICE_CLEAR_CODE,
     SERVICE_DISABLE_CODE,
     SERVICE_ENABLE_CODE,
+    SERVICE_PROBE_SLOTS,
     SERVICE_SET_CODE,
+    SERVICE_SYNC_REGISTRY,
     ZHA_CLEAR_CODE_SERVICE,
     ZHA_DISABLE_CODE_SERVICE,
     ZHA_DOMAIN,
@@ -108,15 +111,15 @@ class ZigbeeLockManager:
         )
         operation, reason = desired_operation_for_slot(metadata)
         if operation == "disable":
-            try:
-                await self.disable_code(
-                    entity_id,
-                    slot,
-                    scheduled=True,
-                    update_desired=False,
-                )
-            except Exception:
-                raise
+            # Disabled/future/expired codes are physically disabled and never
+            # sent as usable PINs. If the disable call fails it propagates; the
+            # private PIN is preserved for a later apply/reconcile.
+            await self.disable_code(
+                entity_id,
+                slot,
+                scheduled=True,
+                update_desired=False,
+            )
             await self.registry.async_record_operation(
                 entity_id=entity_id,
                 slot=slot,
@@ -397,11 +400,11 @@ class ZigbeeLockManager:
             return await self.enable_code(data["entity_id"], data["slot"])
         if service == SERVICE_DISABLE_CODE:
             return await self.disable_code(data["entity_id"], data["slot"])
-        if service in {SERVICE_APPLY_REGISTRY, "sync_registry"}:
+        if service in {SERVICE_APPLY_REGISTRY, SERVICE_SYNC_REGISTRY}:
             return await self.apply_registry(data.get("entity_id"))
-        if service == "apply_schedules":
+        if service == SERVICE_APPLY_SCHEDULES:
             return await self.apply_schedules(data.get("entity_id"))
-        if service == "probe_slots":
+        if service == SERVICE_PROBE_SLOTS:
             return await self.probe_slots(
                 data.get("entity_id"),
                 start_slot=data.get("start_slot"),

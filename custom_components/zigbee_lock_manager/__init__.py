@@ -107,6 +107,11 @@ async def async_setup_entry(hass: Any, entry: Any) -> bool:
     await manager.apply_schedules()
     await manager.scheduler.async_schedule_timers()
 
+    # Re-read slot/PIN validation bounds when options change. Without this the
+    # running manager keeps stale bounds until Home Assistant restarts.
+    if hasattr(entry, "async_on_unload") and hasattr(entry, "add_update_listener"):
+        entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+
     if hasattr(hass.config_entries, "async_forward_entry_setups"):
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     elif hasattr(hass.config_entries, "async_forward_entry_setup"):
@@ -138,6 +143,11 @@ async def _async_register_services(hass: Any) -> None:
             schema=_service_schema(service),
         )
         registered.add(service)
+
+
+async def _async_update_listener(hass: Any, entry: Any) -> None:
+    """Reload the entry so updated options take effect immediately."""
+    await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_unload_entry(hass: Any, entry: Any) -> bool:

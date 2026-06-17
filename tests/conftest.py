@@ -17,6 +17,7 @@ class FakeServices:
     def __init__(self) -> None:
         self.calls: list[tuple[str, str, dict[str, Any], bool]] = []
         self.registered: dict[tuple[str, str], Any] = {}
+        self.register_calls = 0
         self.raise_on_call: Exception | None = None
 
     async def async_call(
@@ -38,10 +39,14 @@ class FakeServices:
         handler: Any,
         schema: Any = None,
     ) -> None:
+        self.register_calls += 1
         self.registered[(domain, service)] = (handler, schema)
 
 
 class FakeConfigEntries:
+    def __init__(self) -> None:
+        self.reloaded_entry_ids: list[str] = []
+
     async def async_forward_entry_setups(
         self, _entry: Any, _platforms: list[str]
     ) -> None:
@@ -49,6 +54,9 @@ class FakeConfigEntries:
 
     async def async_unload_platforms(self, _entry: Any, _platforms: list[str]) -> bool:
         return True
+
+    async def async_reload(self, entry_id: str) -> None:
+        self.reloaded_entry_ids.append(entry_id)
 
 
 class FakeHass:
