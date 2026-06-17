@@ -77,7 +77,7 @@ service: zigbee_lock_manager.set_code
 data:
   entity_id: lock.front_door
   slot: 1
-  name: Micheal
+  name: User
   labels:
     - household
   code: "123456"

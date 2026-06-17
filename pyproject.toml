@@ -5,7 +5,7 @@ description = "Home Assistant custom integration for managing ZHA Zigbee lock us
 readme = "README.md"
 requires-python = ">=3.13"
 license = { text = "MIT" }
-authors = [{ name = "Micheal" }]
+authors = [{ name = "User" }]
 keywords = ["home-assistant", "zigbee", "zha", "lock", "hacs"]
 classifiers = [
   "Development Status :: 3 - Alpha",

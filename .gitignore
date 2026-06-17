@@ -23,3 +23,14 @@ dist/
 # Home Assistant local files
 .storage/
 *.log
+
+# Hermes agent (local config, plans, memories)
+.hermes/
+
+# Tests (excluded for public minimal repo as requested)
+tests/
+
+# Temp data
+tmp/
+temp/
+*.tmp
