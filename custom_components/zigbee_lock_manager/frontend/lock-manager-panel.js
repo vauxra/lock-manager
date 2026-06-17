@@ -206,6 +206,27 @@ class ZigbeeLockManagerPanel extends HTMLElement {
     );
   }
 
+  async _clearKnown(entityId) {
+    const managedCount = Object.keys(this._summary?.locks?.[entityId]?.slots || {}).length;
+    if (!managedCount) {
+      this._error = `No managed slots are recorded for ${entityId}.`;
+      this._render();
+      return;
+    }
+    const ok = confirm(
+      `Clear ${managedCount} known managed slot${managedCount === 1 ? "" : "s"} on ${entityId}?\n\nThis only clears slots currently recorded in the Lock Codes registry.`,
+    );
+    if (!ok) return;
+    await this._call(
+      "clear_all_codes",
+      {
+        entity_id: entityId,
+        known_only: true,
+      },
+      `Clear-known sent for ${entityId}`,
+    );
+  }
+
   async _revealPin(entityId, slot) {
     const key = this._pinKey(entityId, slot);
     if (this._revealedPins.has(key)) {
@@ -332,6 +353,7 @@ class ZigbeeLockManagerPanel extends HTMLElement {
         button { cursor: pointer; border: 0; border-radius: 8px; padding: 9px 12px; background: var(--primary-color); color: var(--text-primary-color, white); margin: 2px; }
         button:disabled { cursor: not-allowed; opacity: .45; }
         button.secondary { background: var(--secondary-background-color); color: var(--primary-text-color); border: 1px solid var(--divider-color); }
+        button.caution { background: rgba(219,68,55,.14); color: var(--error-color, #db4437); border: 1px solid rgba(219,68,55,.45); }
         button.danger { background: var(--error-color, #db4437); color: white; }
         button.link { background: none; color: var(--primary-color); padding: 0; text-decoration: underline; }
         button.icon { min-width: 40px; padding: 8px; }
@@ -347,6 +369,7 @@ class ZigbeeLockManagerPanel extends HTMLElement {
         .actions { white-space: nowrap; }
         .lock-card { margin-bottom: 16px; }
         .lock-head { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
+        .bulk-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .pin-line { display: flex; gap: 6px; margin-top: 5px; }
         .pin-field { min-width: 0; padding: 8px; font-family: monospace; }
@@ -394,7 +417,10 @@ class ZigbeeLockManagerPanel extends HTMLElement {
                     <h2>${this._esc(entityId)}</h2>
                     <div class="muted">Slot coverage: ${bounds.min_slot}-${bounds.max_slot} (${slotCount} configured)</div>
                   </div>
-                  <button class="danger" data-clear-all="${entityId}">Clear all ${bounds.min_slot}-${bounds.max_slot}</button>
+                  <div class="bulk-actions">
+                    <button class="caution" data-clear-known="${entityId}">Clear known managed</button>
+                    <button class="danger" data-clear-all="${entityId}">Clear all ${bounds.min_slot}-${bounds.max_slot}</button>
+                  </div>
                 </div>
                 ${this._renderSlots(entityId, managedLocks[entityId])}
               </section>` : `
@@ -425,6 +451,9 @@ class ZigbeeLockManagerPanel extends HTMLElement {
     });
     this.shadowRoot.querySelectorAll("[data-clear-all]").forEach((button) => {
       button.addEventListener("click", () => this._clearAll(button.getAttribute("data-clear-all")));
+    });
+    this.shadowRoot.querySelectorAll("[data-clear-known]").forEach((button) => {
+      button.addEventListener("click", () => this._clearKnown(button.getAttribute("data-clear-known")));
     });
     this._restoreDraft(draft);
   }

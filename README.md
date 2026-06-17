@@ -44,6 +44,7 @@ After adding the integration, Home Assistant shows a **Lock Codes** panel in the
 - label a slot;
 - set optional start/expiration times;
 - enable, disable, or clear managed slots;
+- clear only known managed slots after confirmation;
 - clear every slot in the configured slot range after explicit confirmation;
 - reveal a stored PIN only by clicking the per-slot eye button;
 - refresh the redacted registry view.
@@ -97,7 +98,7 @@ data:
   known_only: false
 ```
 
-Clears every slot in the supplied/configured range by calling `zha.clear_lock_user_code` per slot. Use this carefully: it can remove working codes from the physical lock. Set `known_only: true` to clear only slots already present in the local manager registry.
+Clears every slot in the supplied/configured range by calling `zha.clear_lock_user_code` per slot. Use this carefully: it can remove working codes from the physical lock. Set `known_only: true` to clear only slots already present in the local manager registry. The panel exposes both paths: **Clear known managed** for local-registry slots and **Clear all** for the configured range.
 
 ### Enable or disable a code
 
