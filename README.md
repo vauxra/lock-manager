@@ -29,7 +29,8 @@ The integration does **not** store PINs in config entries/options, helpers, enti
 2. Install **Zigbee Lock Manager**.
 3. Restart Home Assistant.
 4. Go to **Settings → Devices & services → Add integration** and add **Zigbee Lock Manager**.
-5. Optionally select managed lock entities. You can also target any ZHA lock directly in service calls.
+5. Optionally select managed lock entities and adjust the managed slot/PIN limits.
+6. Open the **Lock Codes** sidebar panel to manage codes from the UI.
 
 ### Manual install
 
@@ -37,9 +38,11 @@ Copy `custom_components/zigbee_lock_manager` into your Home Assistant `config/cu
 
 ## Sidebar panel
 
-After adding the integration, Home Assistant shows a **Lock Codes** panel in the sidebar for administrators. Use it to:
+After adding the integration, Home Assistant shows a **Lock Codes** panel in the sidebar for administrators. This is the normal way to configure and manage lock codes; you should not need the Developer Tools actions menu for day-to-day use.
 
-- choose a configured lock entity or type a lock entity ID;
+Use the panel to:
+
+- choose a lock entity from the dropdown;
 - set/update a PIN for a slot;
 - label a slot;
 - set optional start/expiration times;
@@ -53,9 +56,19 @@ The panel accepts PINs in the write form and stores them in the private store. N
 
 The panel shows the configured slot range, for example `1–30 (30 total)`. Public ZHA does not reliably expose the physical lock's maximum supported user-code slot count, so the configured range is the operational coverage the integration can guarantee.
 
-## Services
+## Configuring managed locks and slot limits
 
-If you prefer YAML/actions, the same operations are available as services. Put `entity_id` under `data`, not under a Home Assistant `target` block.
+Open **Settings → Devices & services → Zigbee Lock Manager → Configure** to update integration options:
+
+- managed lock entities shown in the panel;
+- minimum and maximum managed slot numbers;
+- minimum and maximum accepted PIN length.
+
+The panel dropdown also includes live Home Assistant `lock.*` entities, so newly discovered locks can be selected without typing entity IDs.
+
+## Services for automations and advanced use
+
+The sidebar panel is the recommended interface. The same operations are also available as services for automations, scripts, or troubleshooting. If you use services directly, put `entity_id` under `data`, not under a Home Assistant `target` block.
 
 ### Set a code
 

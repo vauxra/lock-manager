@@ -379,8 +379,6 @@ class ZigbeeLockManagerPanel extends HTMLElement {
         <div class="topbar">
           <div>
             <h1>Lock Codes</h1>
-            <div class="muted">Manage Zigbee lock code slots. PINs are masked and only revealed on explicit admin click.</div>
-            <div class="muted">Configured slots: ${bounds.min_slot}-${bounds.max_slot} (${slotCount} total). Public ZHA does not reliably report the lock's physical max slot count.</div>
           </div>
           <button class="secondary" id="refresh">${this._busy ? "Working…" : "Refresh"}</button>
         </div>
@@ -406,7 +404,6 @@ class ZigbeeLockManagerPanel extends HTMLElement {
             <label for="expires_at">Expires at</label>
             <input id="expires_at" type="datetime-local">
             <label><input id="enabled" type="checkbox" checked> Enabled now</label>
-            <div class="hint">Use a known safe/unoccupied slot first. This UI sends <code>entity_id</code> under service <code>data</code>.</div>
             <button type="submit">Save code</button>
           </form>
           <div>
