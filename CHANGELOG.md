@@ -1,9 +1,18 @@
 # Changelog
 
+## v0.2.1 - 2026-06-18
+
+### Added
+- "← Home" navigation link in the Lock Codes sidebar panel for quick return to Home Assistant overview.
+- Responsive improvements to the top bar on mobile.
+
+### Changed
+- README updated with note that the repo was built for Kwikset but may serve as a reference for other locks.
+- `manifest.json` version bumped to `0.2.1`.
+
 ## v0.2.0 - 2026-06-17
 
 ### Added
-
 - Home Assistant sidebar panel: **Lock Codes**.
 - Lock entity dropdown populated from live `lock.*` Home Assistant entities.
 - Sticky form state so Home Assistant frontend state updates do not reset partially entered code data.
@@ -17,19 +26,16 @@
 - Tests for frontend summaries, private PIN reveal, clear-all behavior, services, scheduling, storage, diagnostics redaction, and config/options flows.
 
 ### Changed
-
 - `manifest.json` version bumped to `0.2.0`.
 - Service descriptions/docs clarify that `entity_id` belongs under service `data`, not a Home Assistant `target` block.
 - README now documents the panel, clear-all behavior, PIN reveal model, slot coverage limits, and private storage trust boundary.
 
 ### Security / privacy
-
 - Normal panel summaries remain PIN-free.
 - Plaintext PINs are stored only in the dedicated Home Assistant private store (`Store(..., private=True, atomic_writes=True)`).
 - PIN reveal is explicit, admin-gated, and not exposed through entity state, diagnostics, logs, or the default panel summary.
 
 ### Known limitations
-
 - Public ZHA does not reliably expose existing lock-code readback/import.
 - Public ZHA does not reliably expose the physical maximum supported user-code slot count; the panel shows the configured management range instead.
 - Private Home Assistant storage persists across restarts but is not encryption-at-rest against host, backup, or admin access.

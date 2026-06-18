@@ -352,6 +352,33 @@ class ZigbeeLockManagerPanel extends HTMLElement {
         input[type="checkbox"] { width: auto; }
         button { cursor: pointer; border: 0; border-radius: 8px; padding: 9px 12px; background: var(--primary-color); color: var(--text-primary-color, white); margin: 2px; }
         button:disabled { cursor: not-allowed; opacity: .45; }
+        .home-link { 
+          color: var(--primary-color); 
+          text-decoration: none; 
+          font-weight: 500; 
+          padding: 8px 14px; 
+          border-radius: 8px; 
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 14px;
+          border: 1px solid var(--divider-color);
+          background: var(--card-background-color);
+        }
+        .home-link:hover { 
+          background: var(--secondary-background-color); 
+        }
+        @media (max-width: 600px) {
+          .home-link {
+            padding: 10px 16px;
+            font-size: 15px;
+          }
+          .topbar {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+          }
+        }
         button.secondary { background: var(--secondary-background-color); color: var(--primary-text-color); border: 1px solid var(--divider-color); }
         button.caution { background: rgba(219,68,55,.14); color: var(--error-color, #db4437); border: 1px solid rgba(219,68,55,.45); }
         button.danger { background: var(--error-color, #db4437); color: white; }
@@ -377,10 +404,11 @@ class ZigbeeLockManagerPanel extends HTMLElement {
       </style>
       <div class="wrap">
         <div class="topbar">
-          <div>
-            <h1>Lock Codes</h1>
+          <h1>Lock Codes</h1>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <a href="/" class="home-link">← Home</a>
+            <button class="secondary" id="refresh">${this._busy ? "Working…" : "Refresh"}</button>
           </div>
-          <button class="secondary" id="refresh">${this._busy ? "Working…" : "Refresh"}</button>
         </div>
         ${this._error ? `<div class="error">${this._esc(this._error)}</div>` : ""}
         <div class="grid">
