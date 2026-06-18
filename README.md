@@ -2,6 +2,9 @@
 
 # Zigbee Lock Manager
 
+> [!NOTE]
+> This repository was made for managing my Kwikset lock. It may work as a useful jumping-off point or reference for other Zigbee locks, but the implementation and testing focus on Kwikset models paired through ZHA.
+
 A HACS-style Home Assistant custom integration for managing Zigbee lock user-code slots through ZHA. It provides a Home Assistant sidebar panel, services, a private PIN store, safe metadata registry, schedule reconciliation, and a redacted summary sensor.
 
 ## Scope
